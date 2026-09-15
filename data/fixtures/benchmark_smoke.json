@@ -1,0 +1,69 @@
+{
+  "manifest": {
+    "manifest_id": "00000000-0000-0000-0000-000000000801",
+    "dataset_name": "NERIA_BENCHMARK_SMOKE",
+    "dataset_version": "0.1.0",
+    "generator_version": "manual-smoke-0.1.0",
+    "random_seed": 20260915,
+    "policy_code": "CORPORATE_EXPENSE",
+    "policy_version": "v1.0",
+    "source_migration": "004",
+    "total_cases": 1,
+    "development_cases": 1,
+    "holdout_cases": 0,
+    "holdout_locked": true
+  },
+  "cases": [
+    {
+      "case_id": "00000000-0000-0000-0000-000000000802",
+      "case_ref": "DEV-SMOKE-001",
+      "split": "DEVELOPMENT",
+      "family_key": "FAM-HOTEL-LIMIT-001",
+      "variant_type": "BOUNDARY",
+      "employee_key": "EMP-SYN-001",
+      "merchant_key": "HOTEL-CENTRO-CHIHUAHUA",
+      "category_hint": "HOTEL",
+      "amount_mxn": "12000.00",
+      "currency": "MXN",
+      "expense_date": "2026-09-10",
+      "receipt_hash": null,
+      "input": {
+        "submitted_at": "2026-09-15T12:00:00+00:00",
+        "receipt_state": "PRESENT_READABLE",
+        "receipt_fixture_ref": "REC-SMOKE-001",
+        "receipt_total_mxn": "12000.00",
+        "business_purpose_declared": "Visita comercial a cliente en Chihuahua.",
+        "category_context": {
+          "stay_nights": 3,
+          "city": "Chihuahua",
+          "country": "MX"
+        }
+      },
+      "history": [],
+      "label": {
+        "expected_compliance": "COMPLIANT",
+        "expected_risk": "LOW",
+        "expected_route": "HUMAN_REVIEW",
+        "assessment_complete": true,
+        "rationale": "El hotel está exactamente en el límite permitido. La revisión humana se activa por monto, no por incumplimiento.",
+        "rules": [
+          {
+            "rule_code": "R01",
+            "expected_state": "PASS",
+            "evidence_ref": "receipt_state=PRESENT_READABLE"
+          },
+          {
+            "rule_code": "R02",
+            "expected_state": "PASS",
+            "evidence_ref": "amount_mxn=12000.00;limit_mxn=12000.00"
+          },
+          {
+            "rule_code": "R07",
+            "expected_state": "SIGNAL",
+            "evidence_ref": "amount_mxn>=10000.00"
+          }
+        ]
+      }
+    }
+  ]
+}
