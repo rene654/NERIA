@@ -5,6 +5,8 @@ services:
       POSTGRES_DB: neria
       POSTGRES_USER: neria_dev
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - neria_pgdata:/var/lib/postgresql/data
     healthcheck:
