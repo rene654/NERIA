@@ -7,7 +7,7 @@
     "random_seed": 20260915,
     "policy_code": "CORPORATE_EXPENSE",
     "policy_version": "v1.0",
-    "source_migration": "004",
+    "source_migration": "005",
     "total_cases": 1,
     "development_cases": 1,
     "holdout_cases": 0,
@@ -46,19 +46,25 @@
         "expected_route": "HUMAN_REVIEW",
         "assessment_complete": true,
         "rationale": "El hotel está exactamente en el límite permitido. La revisión humana se activa por monto, no por incumplimiento.",
+        "permitted_actions": [
+          "ROUTE_TO_HUMAN_REVIEW"
+        ],
         "rules": [
           {
             "rule_code": "R01",
+            "rule_version": "v1.0",
             "expected_state": "PASS",
             "evidence_ref": "receipt_state=PRESENT_READABLE"
           },
           {
             "rule_code": "R02",
+            "rule_version": "v1.0",
             "expected_state": "PASS",
             "evidence_ref": "amount_mxn=12000.00;limit_mxn=12000.00"
           },
           {
             "rule_code": "R07",
+            "rule_version": "v1.0",
             "expected_state": "SIGNAL",
             "evidence_ref": "amount_mxn>=10000.00"
           }
