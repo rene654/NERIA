@@ -1,40 +1,67 @@
 \set ON_ERROR_STOP on
+
 BEGIN;
--- Datos válidos temporales para ejecutar las pruebas.
+
+INSERT INTO core.organizations (
+    organization_id,
+    organization_code,
+    legal_name,
+    country_code,
+    base_currency,
+    time_zone
+)
+VALUES (
+    '00000000-0000-4000-8000-000000000100',
+    'CORE_TEST',
+    'Core Constraint Test Organization',
+    'MX',
+    'MXN',
+    'America/Mexico_City'
+);
+
 INSERT INTO core.employees (
     employee_id,
     employee_ref,
     department,
-    cost_center
+    cost_center,
+    organization_id
 )
 VALUES (
     '00000000-0000-0000-0000-000000000101',
     'TEST-EMP-001',
     'FINANCE',
-    'CC-TEST'
+    'CC-TEST',
+    '00000000-0000-4000-8000-000000000100'
 );
+
 INSERT INTO core.merchants (
     merchant_id,
     merchant_key,
-    canonical_name
+    canonical_name,
+    organization_id
 )
 VALUES (
     '00000000-0000-0000-0000-000000000201',
     'TEST-HOTEL',
-    'Hotel de Prueba'
+    'Hotel de Prueba',
+    '00000000-0000-4000-8000-000000000100'
 );
+
 INSERT INTO core.expenses (
     expense_id,
     employee_id,
     source_system,
-    external_ref
+    external_ref,
+    organization_id
 )
 VALUES (
     '00000000-0000-0000-0000-000000000301',
     '00000000-0000-0000-0000-000000000101',
     'CONSTRAINT_TEST',
-    'EXP-001'
+    'EXP-001',
+    '00000000-0000-4000-8000-000000000100'
 );
+
 INSERT INTO core.expense_versions (
     expense_id,
     version_no,
@@ -47,7 +74,8 @@ INSERT INTO core.expense_versions (
     declared_category,
     validated_category,
     business_purpose_declared,
-    receipt_state
+    receipt_state,
+    organization_id
 )
 VALUES (
     '00000000-0000-0000-0000-000000000301',
@@ -61,15 +89,18 @@ VALUES (
     'HOTEL',
     'HOTEL',
     'Visita a cliente',
-    'PRESENT_READABLE'
+    'PRESENT_READABLE',
+    '00000000-0000-4000-8000-000000000100'
 );
+
 INSERT INTO core.receipt_documents (
     document_id,
     expense_id,
     version_no,
     source_kind,
     fixture_ref,
-    is_primary
+    is_primary,
+    organization_id
 )
 VALUES (
     '00000000-0000-0000-0000-000000000401',
@@ -77,49 +108,60 @@ VALUES (
     1,
     'STRUCTURED_FIXTURE',
     'FIXTURE-001',
-    TRUE
+    TRUE,
+    '00000000-0000-4000-8000-000000000100'
 );
+
 DO $tests$
 BEGIN
-    -- 1. Referencia externa duplicada.
     BEGIN
         INSERT INTO core.expenses (
             expense_id,
             employee_id,
             source_system,
-            external_ref
+            external_ref,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000302',
             '00000000-0000-0000-0000-000000000101',
             'CONSTRAINT_TEST',
-            'EXP-001'
+            'EXP-001',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 1: duplicate reference was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 1: duplicate reference was accepted';
     EXCEPTION
         WHEN unique_violation THEN
-            RAISE NOTICE 'PASS 1: duplicate reference rejected';
+            RAISE NOTICE
+                'PASS 1: duplicate reference rejected';
     END;
-    -- 2. Empleado inexistente.
+
     BEGIN
         INSERT INTO core.expenses (
             expense_id,
             employee_id,
             source_system,
-            external_ref
+            external_ref,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000303',
             '00000000-0000-0000-0000-000000000999',
             'CONSTRAINT_TEST',
-            'EXP-ORPHAN'
+            'EXP-ORPHAN',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 2: orphan expense was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 2: orphan expense was accepted';
     EXCEPTION
         WHEN foreign_key_violation THEN
-            RAISE NOTICE 'PASS 2: orphan expense rejected';
+            RAISE NOTICE
+                'PASS 2: orphan expense rejected';
     END;
-    -- 3. Número de versión inválido.
+
     BEGIN
         INSERT INTO core.expense_versions (
             expense_id,
@@ -129,7 +171,8 @@ BEGIN
             amount_mxn,
             merchant_name_raw,
             declared_category,
-            receipt_state
+            receipt_state,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000301',
@@ -139,14 +182,18 @@ BEGIN
             100.00,
             'Hotel de Prueba',
             'HOTEL',
-            'MISSING'
+            'MISSING',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 3: invalid version was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 3: invalid version was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 3: invalid version rejected';
+            RAISE NOTICE
+                'PASS 3: invalid version rejected';
     END;
-    -- 4. Importe igual a cero.
+
     BEGIN
         INSERT INTO core.expense_versions (
             expense_id,
@@ -156,7 +203,8 @@ BEGIN
             amount_mxn,
             merchant_name_raw,
             declared_category,
-            receipt_state
+            receipt_state,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000301',
@@ -166,14 +214,18 @@ BEGIN
             0.00,
             'Hotel de Prueba',
             'HOTEL',
-            'MISSING'
+            'MISSING',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 4: zero amount was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 4: zero amount was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 4: zero amount rejected';
+            RAISE NOTICE
+                'PASS 4: zero amount rejected';
     END;
-    -- 5. Moneda fuera del MVP.
+
     BEGIN
         INSERT INTO core.expense_versions (
             expense_id,
@@ -184,7 +236,8 @@ BEGIN
             currency,
             merchant_name_raw,
             declared_category,
-            receipt_state
+            receipt_state,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000301',
@@ -195,14 +248,18 @@ BEGIN
             'USD',
             'Hotel de Prueba',
             'HOTEL',
-            'MISSING'
+            'MISSING',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 5: unsupported currency was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 5: unsupported currency was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 5: unsupported currency rejected';
+            RAISE NOTICE
+                'PASS 5: unsupported currency rejected';
     END;
-    -- 6. Fecha del gasto posterior a la presentación.
+
     BEGIN
         INSERT INTO core.expense_versions (
             expense_id,
@@ -212,7 +269,8 @@ BEGIN
             amount_mxn,
             merchant_name_raw,
             declared_category,
-            receipt_state
+            receipt_state,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000301',
@@ -222,14 +280,18 @@ BEGIN
             100.00,
             'Hotel de Prueba',
             'HOTEL',
-            'MISSING'
+            'MISSING',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 6: future expense date was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 6: future expense date was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 6: future expense date rejected';
+            RAISE NOTICE
+                'PASS 6: future expense date rejected';
     END;
-    -- 7. Categoría inexistente.
+
     BEGIN
         INSERT INTO core.expense_versions (
             expense_id,
@@ -239,7 +301,8 @@ BEGIN
             amount_mxn,
             merchant_name_raw,
             declared_category,
-            receipt_state
+            receipt_state,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000301',
@@ -249,35 +312,44 @@ BEGIN
             100.00,
             'Hotel de Prueba',
             'TRAVEL',
-            'MISSING'
+            'MISSING',
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 7: invalid category was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 7: invalid category was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 7: invalid category rejected';
+            RAISE NOTICE
+                'PASS 7: invalid category rejected';
     END;
-    -- 8. Archivo sin ubicación ni huella digital.
+
     BEGIN
         INSERT INTO core.receipt_documents (
             document_id,
             expense_id,
             version_no,
             source_kind,
-            is_primary
+            is_primary,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000402',
             '00000000-0000-0000-0000-000000000301',
             1,
             'FILE',
-            FALSE
+            FALSE,
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 8: incomplete file was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 8: incomplete file was accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE 'PASS 8: incomplete file rejected';
+            RAISE NOTICE
+                'PASS 8: incomplete file rejected';
     END;
-    -- 9. Dos comprobantes principales para la misma versión.
+
     BEGIN
         INSERT INTO core.receipt_documents (
             document_id,
@@ -285,7 +357,8 @@ BEGIN
             version_no,
             source_kind,
             fixture_ref,
-            is_primary
+            is_primary,
+            organization_id
         )
         VALUES (
             '00000000-0000-0000-0000-000000000403',
@@ -293,14 +366,20 @@ BEGIN
             1,
             'STRUCTURED_FIXTURE',
             'FIXTURE-002',
-            TRUE
+            TRUE,
+            '00000000-0000-4000-8000-000000000100'
         );
-        RAISE EXCEPTION 'FAIL 9: second primary receipt was accepted';
+
+        RAISE EXCEPTION
+            'FAIL 9: second primary receipt was accepted';
     EXCEPTION
         WHEN unique_violation THEN
-            RAISE NOTICE 'PASS 9: second primary receipt rejected';
+            RAISE NOTICE
+                'PASS 9: second primary receipt rejected';
     END;
 END
 $tests$;
+
 ROLLBACK;
+
 \echo 'PASS: 9 core constraint tests completed'
