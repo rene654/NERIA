@@ -4,6 +4,7 @@ INSERT INTO benchmark.dataset_manifests (
     manifest_id,
     dataset_name,
     dataset_version,
+    contract_version,
     generator_version,
     random_seed,
     policy_code,
@@ -18,6 +19,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000901',
     'NERIA_ACTION_TEST',
     '0.1.0',
+    'v0.1',
     'manual-test',
     20260916,
     'CORPORATE_EXPENSE',
@@ -36,6 +38,8 @@ INSERT INTO benchmark.cases (
     split,
     family_key,
     variant_type,
+    organization_profile_key,
+    jurisdiction_country,
     employee_key,
     merchant_key,
     category_hint,
@@ -51,6 +55,8 @@ VALUES (
     'DEVELOPMENT',
     'FAM-ACTION-TEST-001',
     'AUTHORITY',
+    'ORG-PROFILE-ACTION-TEST-MX',
+    'MX',
     'EMP-SYN-901',
     'MERCHANT-SYN-901',
     'HOTEL',
@@ -66,6 +72,8 @@ INSERT INTO benchmark.labels (
     expected_risk,
     expected_route,
     assessment_complete,
+    miss_severity,
+    miss_severity_rationale,
     rationale
 )
 VALUES (
@@ -74,6 +82,8 @@ VALUES (
     'LOW',
     'SCREENING_COMPLETE',
     TRUE,
+    'LOW',
+    'Missing this synthetic result has low business impact.',
     'Synthetic authority constraint test.'
 );
 
@@ -88,13 +98,10 @@ BEGIN
             '00000000-0000-0000-0000-000000000999',
             'RECORD_SCREENING_RESULT'
         );
-
-        RAISE EXCEPTION
-            'FAIL 1: orphan action accepted';
+        RAISE EXCEPTION 'FAIL 1: orphan action accepted';
     EXCEPTION
         WHEN foreign_key_violation THEN
-            RAISE NOTICE
-                'PASS 1: orphan action rejected';
+            RAISE NOTICE 'PASS 1: orphan action rejected';
     END;
 
     BEGIN
@@ -106,13 +113,10 @@ BEGIN
             '00000000-0000-0000-0000-000000000902',
             'APPROVE_PAYMENT'
         );
-
-        RAISE EXCEPTION
-            'FAIL 2: financial authority accepted';
+        RAISE EXCEPTION 'FAIL 2: financial authority accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE
-                'PASS 2: financial authority rejected';
+            RAISE NOTICE 'PASS 2: financial authority rejected';
     END;
 END
 $$;
@@ -137,13 +141,10 @@ BEGIN
             '00000000-0000-0000-0000-000000000902',
             'RECORD_SCREENING_RESULT'
         );
-
-        RAISE EXCEPTION
-            'FAIL 3: duplicate action accepted';
+        RAISE EXCEPTION 'FAIL 3: duplicate action accepted';
     EXCEPTION
         WHEN unique_violation THEN
-            RAISE NOTICE
-                'PASS 3: duplicate action rejected';
+            RAISE NOTICE 'PASS 3: duplicate action rejected';
     END;
 
     BEGIN
@@ -161,13 +162,10 @@ BEGIN
             'Synthetic evidence.',
             '   '
         );
-
-        RAISE EXCEPTION
-            'FAIL 4: blank rule version accepted';
+        RAISE EXCEPTION 'FAIL 4: blank rule version accepted';
     EXCEPTION
         WHEN check_violation THEN
-            RAISE NOTICE
-                'PASS 4: blank rule version rejected';
+            RAISE NOTICE 'PASS 4: blank rule version rejected';
     END;
 
     BEGIN
@@ -185,13 +183,10 @@ BEGIN
             'Synthetic evidence.',
             NULL
         );
-
-        RAISE EXCEPTION
-            'FAIL 5: null rule version accepted';
+        RAISE EXCEPTION 'FAIL 5: null rule version accepted';
     EXCEPTION
         WHEN not_null_violation THEN
-            RAISE NOTICE
-                'PASS 5: null rule version rejected';
+            RAISE NOTICE 'PASS 5: null rule version rejected';
     END;
 END
 $$;

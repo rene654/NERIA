@@ -3,6 +3,7 @@ INSERT INTO benchmark.dataset_manifests (
     manifest_id,
     dataset_name,
     dataset_version,
+    contract_version,
     generator_version,
     random_seed,
     policy_code,
@@ -16,6 +17,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000601',
     'NERIA_BENCHMARK',
     'v0.1-test',
+    'v0.1',
     'generator-test-001',
     20260914,
     'CORPORATE_EXPENSE',
@@ -32,6 +34,8 @@ INSERT INTO benchmark.cases (
     split,
     family_key,
     variant_type,
+    organization_profile_key,
+    jurisdiction_country,
     employee_key,
     merchant_key,
     category_hint,
@@ -47,6 +51,8 @@ VALUES (
     'DEVELOPMENT',
     'FAM-TEST-001',
     'BASELINE',
+    'ORG-PROFILE-BENCHMARK-TEST-MX',
+    'MX',
     'EMP-TEST-001',
     'MERCHANT-TEST-001',
     'HOTEL',
@@ -81,6 +87,8 @@ INSERT INTO benchmark.labels (
     expected_risk,
     expected_route,
     assessment_complete,
+    miss_severity,
+    miss_severity_rationale,
     rationale
 )
 VALUES (
@@ -89,6 +97,8 @@ VALUES (
     'LOW',
     'SCREENING_COMPLETE',
     TRUE,
+    'LOW',
+    'Missing this synthetic result has low business impact.',
     'Caso válido de prueba dentro del límite de política.'
 );
 INSERT INTO benchmark.label_rules (
@@ -110,6 +120,7 @@ BEGIN
             manifest_id,
             dataset_name,
             dataset_version,
+            contract_version,
             generator_version,
             random_seed,
             policy_code,
@@ -123,6 +134,7 @@ BEGIN
             '00000000-0000-0000-0000-000000000604',
             'INVALID_COUNTS',
             'v1',
+            'v0.1',
             'generator-test',
             1,
             'CORPORATE_EXPENSE',
@@ -145,6 +157,8 @@ BEGIN
             split,
             family_key,
             variant_type,
+            organization_profile_key,
+            jurisdiction_country,
             employee_key,
             merchant_key,
             category_hint,
@@ -159,6 +173,8 @@ BEGIN
             'TRAINING',
             'FAM-TEST-002',
             'BASELINE',
+            'ORG-PROFILE-BENCHMARK-TEST-MX',
+            'MX',
             'EMP-TEST-002',
             'MERCHANT-TEST-002',
             'HOTEL',
@@ -179,6 +195,8 @@ BEGIN
             split,
             family_key,
             variant_type,
+            organization_profile_key,
+            jurisdiction_country,
             employee_key,
             merchant_key,
             category_hint,
@@ -193,6 +211,8 @@ BEGIN
             'DEVELOPMENT',
             '',
             'BASELINE',
+            'ORG-PROFILE-BENCHMARK-TEST-MX',
+            'MX',
             'EMP-TEST-003',
             'MERCHANT-TEST-003',
             'HOTEL',
@@ -213,6 +233,8 @@ BEGIN
             split,
             family_key,
             variant_type,
+            organization_profile_key,
+            jurisdiction_country,
             employee_key,
             merchant_key,
             category_hint,
@@ -227,6 +249,8 @@ BEGIN
             'DEVELOPMENT',
             'FAM-TEST-004',
             'BASELINE',
+            'ORG-PROFILE-BENCHMARK-TEST-MX',
+            'MX',
             'EMP-TEST-004',
             'MERCHANT-TEST-004',
             'HOTEL',
@@ -246,6 +270,8 @@ BEGIN
             expected_risk,
             expected_route,
             assessment_complete,
+            miss_severity,
+            miss_severity_rationale,
             rationale
         )
         VALUES (
@@ -254,6 +280,8 @@ BEGIN
             'LOW',
             'SCREENING_COMPLETE',
             TRUE,
+            'LOW',
+            'Missing this synthetic result has low business impact.',
             'Etiqueta huérfana de prueba.'
         );
         RAISE EXCEPTION 'FAIL 5';
@@ -268,6 +296,8 @@ BEGIN
             expected_risk,
             expected_route,
             assessment_complete,
+            miss_severity,
+            miss_severity_rationale,
             rationale
         )
         VALUES (
@@ -276,6 +306,8 @@ BEGIN
             'LOW',
             'SCREENING_COMPLETE',
             TRUE,
+            'LOW',
+            'Missing this synthetic result has low business impact.',
             'Etiqueta inválida de prueba.'
         );
         RAISE EXCEPTION 'FAIL 6';
@@ -291,6 +323,8 @@ BEGIN
             split,
             family_key,
             variant_type,
+            organization_profile_key,
+            jurisdiction_country,
             employee_key,
             merchant_key,
             category_hint,
@@ -305,6 +339,8 @@ BEGIN
             'DEVELOPMENT',
             'FAM-TEST-005',
             'BASELINE',
+            'ORG-PROFILE-BENCHMARK-TEST-MX',
+            'MX',
             'EMP-TEST-005',
             'MERCHANT-TEST-005',
             'HOTEL',
