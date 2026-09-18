@@ -8,7 +8,7 @@ from typing import Any
 
 
 CONTRACT_VERSION = "v0.2"
-SOURCE_MIGRATION = "007"
+SOURCE_MIGRATION = "008"
 
 MONEY_PATTERN = re.compile(r"^(?:0|[1-9][0-9]*)\.[0-9]{2}$")
 COUNTRY_CODE_PATTERN = re.compile(r"^[A-Z]{2}$")
@@ -17,6 +17,7 @@ INVALID_JSON_POINTER_ESCAPE = re.compile(r"~(?:[^01]|$)")
 ALLOWED_ACTIONS = {
     "RECORD_SCREENING_RESULT",
     "REQUEST_INFORMATION",
+    "REQUEST_POLICY_CLARIFICATION",
     "ROUTE_TO_HUMAN_REVIEW",
     "RETRY_TECHNICAL_PROCESSING",
     "CREATE_TECHNICAL_ALERT",
@@ -26,6 +27,9 @@ ALLOWED_ACTIONS = {
 REQUIRED_ACTIONS_BY_ROUTE = {
     "SCREENING_COMPLETE": {"RECORD_SCREENING_RESULT"},
     "NEEDS_INFORMATION": {"REQUEST_INFORMATION"},
+    "POLICY_CLARIFICATION": {
+        "REQUEST_POLICY_CLARIFICATION"
+    },
     "HUMAN_REVIEW": {"ROUTE_TO_HUMAN_REVIEW"},
     "SYSTEM_RECOVERY": {
         "RETRY_TECHNICAL_PROCESSING",
@@ -65,6 +69,20 @@ ALLOWED_CHANGED_OUTPUTS = {
     "RULE_STATES",
     "PERMITTED_ACTIONS",
 }
+
+ALLOWED_RULE_STATES = {
+    "PASS",
+    "VIOLATION",
+    "SIGNAL",
+    "PENDING",
+    "NOT_APPLICABLE",
+    "CONTROL",
+    "INVALID_INPUT",
+    "OUT_OF_SCOPE",
+    "ACTION_DENIED",
+    "TECHNICAL_ERROR",
+}
+
 
 ALLOWED_MISS_SEVERITIES = {
     "LOW",
@@ -271,6 +289,14 @@ def validate_label(case: dict[str, Any]) -> None:
         raise ValueError(f"{case_ref} contiene reglas duplicadas")
 
     for rule in rules:
+        expected_state = rule["expected_state"]
+
+        if expected_state not in ALLOWED_RULE_STATES:
+            raise ValueError(
+                f"{case_ref}.{rule['rule_code']} contiene "
+                f"expected_state inválido: {expected_state}"
+            )
+
         validate_non_empty_text(
             rule["rule_version"],
             f"{case_ref}.{rule['rule_code']}.rule_version",
