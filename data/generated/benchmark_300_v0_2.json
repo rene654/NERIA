@@ -3970,6 +3970,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Chihuahua",
           "family_repetition": "1",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4026,6 +4027,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Chihuahua",
           "family_repetition": "1",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4097,6 +4099,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Monterrey",
           "family_repetition": "2",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4153,6 +4156,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Monterrey",
           "family_repetition": "2",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4224,6 +4228,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Guadalajara",
           "family_repetition": "3",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4280,6 +4285,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Guadalajara",
           "family_repetition": "3",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4351,6 +4357,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Querétaro",
           "family_repetition": "4",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4407,6 +4414,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Querétaro",
           "family_repetition": "4",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4478,6 +4486,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Puebla",
           "family_repetition": "5",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4534,6 +4543,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Puebla",
           "family_repetition": "5",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4605,6 +4615,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Chihuahua",
           "family_repetition": "6",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4661,6 +4672,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Chihuahua",
           "family_repetition": "6",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4732,6 +4744,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Monterrey",
           "family_repetition": "7",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4788,6 +4801,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Monterrey",
           "family_repetition": "7",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4859,6 +4873,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Guadalajara",
           "family_repetition": "8",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -4915,6 +4930,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Guadalajara",
           "family_repetition": "8",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -4986,6 +5002,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Querétaro",
           "family_repetition": "9",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -5042,6 +5059,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Querétaro",
           "family_repetition": "9",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },
@@ -5113,6 +5131,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Puebla",
           "family_repetition": "10",
+          "attendee_count": 1,
           "prohibited_item": null
         }
       },
@@ -5169,6 +5188,7 @@
           "scenario_code": "R03",
           "synthetic_city": "Puebla",
           "family_repetition": "10",
+          "attendee_count": 1,
           "prohibited_item": "ALCOHOL"
         }
       },

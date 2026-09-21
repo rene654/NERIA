@@ -97,8 +97,9 @@ Relationship coverage:
 - Source migration: `008`
 - Seed: `20260918`
 - Canonical dataset hash:
-  `57d1be5c023ec9ea9b38ea4881c17162a6039f632624c9626cc4d422c8e90c85`
+  `fd7e61d316d3ddbd84b730f33e85978102b756d0bbd95612e9465928638731d7`
 - Benchmark implementation commit: `87892f0`
+- Phase 3 validation correction: R03 meal fixtures include `attendee_count=1` so R02 is fully evaluable while R03 remains the isolated changed control.
 
 Two independent generations produced identical files and the same canonical
 hash. Replacing the imported dataset twice preserved one manifest, 300 cases

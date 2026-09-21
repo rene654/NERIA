@@ -240,8 +240,16 @@ def build_pair(
         return [base, variant]
 
     if scenario_number == 3:
-        base_context = {**context, "prohibited_item": None}
-        variant_context = {**context, "prohibited_item": "ALCOHOL"}
+        base_context = {
+            **context,
+            "attendee_count": 1,
+            "prohibited_item": None,
+        }
+        variant_context = {
+            **context,
+            "attendee_count": 1,
+            "prohibited_item": "ALCOHOL",
+        }
         base = generated_case(
             seed, split, base_ref, family, "BASELINE", employee, merchant,
             "MEALS", "400.00", "PRESENT_READABLE", receipt_ref, "400.00",
