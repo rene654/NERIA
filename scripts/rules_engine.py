@@ -44,7 +44,7 @@ def rule(code: str, state: str, evidence: str) -> dict[str, str]:
 
 
 def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
-    """Calcula R01-R07 aplicables sin consultar etiquetas."""
+    """Calcula R01-R10 aplicables sin consultar etiquetas."""
     if "label" in expense or "relationship" in expense:
         raise ValueError("El motor solo acepta datos de entrada")
 
@@ -115,6 +115,44 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
         else:
             raise ValueError("prohibited_item no reconocido")
 
+    history = expense.get("history")
+    if not isinstance(history, list):
+        raise ValueError("history debe ser una lista")
+    current_receipt_hash = expense.get("receipt_hash")
+    matching_history = 0
+    for historical in history:
+        if not isinstance(historical, dict):
+            raise ValueError(
+                "cada elemento de history debe ser un objeto"
+            )
+        same_identity = (
+            historical.get("employee_key")
+            == expense.get("employee_key")
+            and historical.get("merchant_key")
+            == expense.get("merchant_key")
+            and historical.get("amount_mxn")
+            == expense.get("amount_mxn")
+            and historical.get("currency")
+            == expense.get("currency")
+        )
+        same_receipt = (
+            current_receipt_hash is not None
+            and historical.get("receipt_hash")
+            == current_receipt_hash
+        )
+        if same_identity and same_receipt:
+            matching_history += 1
+    if matching_history:
+        results.append(rule(
+            "R04",
+            "SIGNAL",
+            f"matching_history={matching_history};"
+            "receipt_hash_match=true",
+        ))
+    else:
+        results.append(rule(
+            "R04", "PASS", "matching_history=0",
+        ))
     if receipt_state == "PRESENT_READABLE":
         receipt_total = details.get("receipt_total_mxn")
         if receipt_total is not None:
@@ -163,5 +201,69 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
         results.append(rule(
             "R07", "CONTROL", "amount_mxn>=10000.00",
         ))
+
+    if category == "AIRFARE":
+        travel_class = context.get("travel_class")
+        if travel_class is None:
+            results.append(rule(
+                "R08", "PENDING", "travel_class=MISSING",
+            ))
+        elif not isinstance(travel_class, str):
+            raise ValueError("travel_class debe ser texto")
+        else:
+            normalized_class = travel_class.strip().upper()
+            if not normalized_class:
+                raise ValueError(
+                    "travel_class no puede estar vacío"
+                )
+            if normalized_class == "ECONOMY":
+                results.append(rule(
+                    "R08", "PASS", "travel_class=ECONOMY",
+                ))
+            else:
+                results.append(rule(
+                    "R08",
+                    "VIOLATION",
+                    f"travel_class={normalized_class};"
+                    "required=ECONOMY",
+                ))
+    if category == "MEALS" and "attendee_count" in context:
+        attendee_count = context["attendee_count"]
+        if attendee_count is None:
+            results.append(rule(
+                "R09",
+                "PENDING",
+                "critical_context=attendee_count",
+            ))
+        elif type(attendee_count) is int and attendee_count >= 1:
+            results.append(rule(
+                "R09",
+                "PASS",
+                f"attendee_count={attendee_count}",
+            ))
+        else:
+            raise ValueError(
+                "attendee_count debe ser entero positivo o null"
+            )
+    if "policy_applicable" in context:
+        policy_applicable = context["policy_applicable"]
+        if policy_applicable is True:
+            results.append(rule(
+                "R10", "PASS", "policy_applicable=true",
+            ))
+        elif policy_applicable is None:
+            results.append(rule(
+                "R10", "PENDING", "policy_applicable=UNKNOWN",
+            ))
+        elif policy_applicable is False:
+            results.append(rule(
+                "R10",
+                "NOT_APPLICABLE",
+                "policy_applicable=false",
+            ))
+        else:
+            raise ValueError(
+                "policy_applicable debe ser booleano o null"
+            )
 
     return results

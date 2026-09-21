@@ -84,6 +84,36 @@ class CoreRulesTests(unittest.TestCase):
                 self.assertEqual(actual, expected)
                 checked += 1
         self.assertEqual(checked, 24)
+    def test_duplicate_airfare_context_and_policy_rules(self):
+        expected_codes = {"R04", "R08", "R09", "R10"}
+        checked = 0
+        for case in self.benchmark_cases:
+            if case["split"] != "DEVELOPMENT":
+                continue
+            expected = {
+                item["rule_code"]: (
+                    item["expected_state"],
+                    item["evidence_ref"],
+                )
+                for item in case["label"]["rules"]
+                if item["rule_code"] in expected_codes
+            }
+            if not expected:
+                continue
+            with self.subTest(case=case["case_ref"]):
+                actual = {
+                    item["rule_code"]: (
+                        item["state"],
+                        item["evidence_ref"],
+                    )
+                    for item in evaluate_core_rules(
+                        model_input(case)
+                    )
+                    if item["rule_code"] in expected
+                }
+                self.assertEqual(actual, expected)
+                checked += 1
+        self.assertEqual(checked, 48)
     def test_rejects_unknown_item_and_future_date(self):
         expense = copy.deepcopy(model_input(self.cases[0]))
         expense["input"]["category_context"][
