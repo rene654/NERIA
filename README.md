@@ -28,7 +28,7 @@ NERIA is being designed to:
 |---|---|
 | Phase 1 — Process and Policy Design | Complete |
 | Phase 2 — Data Foundation | Complete |
-| Phase 3 — Deterministic Rules Engine | In progress |
+| Phase 3 — Deterministic Rules Engine | Complete |
 | Phase 4 — REST API | Not started |
 | Phase 5 — AI Intelligence Layer | Not started |
 | Phase 6 — Workflow and Human Review | Not started |
@@ -65,7 +65,10 @@ The current Phase 3 implementation evaluates:
 - R11-R14 — admission, scope, authority and technical controls.
 
 Individual rules and final decision aggregation are implemented and
-tested against DEVELOPMENT cases. HOLDOUT evaluation remains pending.
+validated against the controlled synthetic benchmark. DEVELOPMENT
+achieved 180/180 full decisions and HOLDOUT achieved 120/120 on its
+first preserved evaluation. These benchmark results are not evidence
+of production accuracy on real-world expense data.
 
 ## Current limitations
 
