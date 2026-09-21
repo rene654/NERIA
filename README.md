@@ -64,8 +64,8 @@ The current Phase 3 implementation evaluates:
 - R10 — policy applicability;
 - R11-R14 — admission, scope, authority and technical controls.
 
-Individual rules are implemented and tested. Final aggregation into
-compliance, risk, route and permitted actions is still under development.
+Individual rules and final decision aggregation are implemented and
+tested against DEVELOPMENT cases. HOLDOUT evaluation remains pending.
 
 ## Current limitations
 
