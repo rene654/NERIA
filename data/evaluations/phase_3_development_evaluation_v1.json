@@ -1,0 +1,30 @@
+{
+  "dataset_hash": "fd7e61d316d3ddbd84b730f33e85978102b756d0bbd95612e9465928638731d7",
+  "dataset_name": "NERIA_BENCHMARK_300",
+  "dataset_version": "0.2.1-300",
+  "decision_mismatches": [],
+  "engine_hash": "3b2a1c51f588aae11159c0fb9ebca53112497928fef419fbdac5ec1ebcb91c35",
+  "engine_version": "deterministic-rules-v1.0.0",
+  "expected_rule_states": 324,
+  "field_accuracy": {
+    "assessment_complete": 100.0,
+    "compliance": 100.0,
+    "permitted_actions": 100.0,
+    "risk": 100.0,
+    "route": 100.0
+  },
+  "field_matches": {
+    "assessment_complete": 180,
+    "compliance": 180,
+    "permitted_actions": 180,
+    "risk": 180,
+    "route": 180
+  },
+  "full_decision_accuracy": 100.0,
+  "full_decision_matches": 180,
+  "matched_rule_states": 324,
+  "rule_mismatches": [],
+  "rule_state_accuracy": 100.0,
+  "split": "DEVELOPMENT",
+  "total_cases": 180
+}

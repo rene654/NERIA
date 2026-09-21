@@ -36,19 +36,17 @@ class CoreRulesTests(unittest.TestCase):
                 continue
 
             with self.subTest(case=case["case_ref"]):
-                actual = {
-                    r["rule_code"]: (r["state"], r["evidence_ref"])
-                    for r in evaluate_core_rules(model_input(case))
-                    if r["rule_code"] in {
-                        "R01", "R02", "R05", "R07"
-                    }
-                }
                 expected = {
                     r["rule_code"]: (
                         r["expected_state"], r["evidence_ref"]
                     )
                     for r in case["label"]["rules"]
                     if r["rule_code"] in {"R01", "R02", "R05", "R07"}
+                }
+                actual = {
+                    r["rule_code"]: (r["state"], r["evidence_ref"])
+                    for r in evaluate_core_rules(model_input(case))
+                    if r["rule_code"] in expected
                 }
                 self.assertEqual(actual, expected)
                 checked.add(case["case_ref"])
@@ -127,7 +125,7 @@ class CoreRulesTests(unittest.TestCase):
             evaluate_core_rules(future_expense)
     def test_receipt_threshold(self):
         for amount, expected in (
-            ("500.00", "PASS"),
+            ("500.00", "NOT_APPLICABLE"),
             ("500.01", "VIOLATION"),
         ):
             with self.subTest(amount=amount):

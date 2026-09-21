@@ -63,8 +63,8 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
             state = "VIOLATION"
             evidence = f"amount_mxn={amount:.2f};receipt_state=MISSING"
         else:
-            state = "PASS"
-            evidence = f"amount_mxn={amount:.2f};receipt_state=OPTIONAL"
+            state = "NOT_APPLICABLE"
+            evidence = f"amount_mxn={amount:.2f}"
         results.append(rule("R01", state, evidence))
     elif receipt_state == "PRESENT_READABLE":
         results.append(rule(
@@ -200,6 +200,11 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
     if amount >= HUMAN_REVIEW_THRESHOLD:
         results.append(rule(
             "R07", "CONTROL", "amount_mxn>=10000.00",
+        ))
+    else:
+        results.append(rule(
+            "R07", "NOT_APPLICABLE",
+            "amount_mxn<10000.00",
         ))
 
     if category == "AIRFARE":
