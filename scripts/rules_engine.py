@@ -1,6 +1,7 @@
 """Primer tramo del motor determinístico: política corporativa v1.0."""
 
 import re
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -16,6 +17,14 @@ LIMITS_MXN = {
 RECEIPT_THRESHOLD = Decimal("500.00")
 RECEIPT_TOLERANCE = Decimal("1.00")
 HUMAN_REVIEW_THRESHOLD = Decimal("10000.00")
+MAX_EXPENSE_AGE_DAYS = 30
+PROHIBITED_ITEMS = {
+    "ALCOHOL",
+    "TOBACCO",
+    "VAPING",
+    "GAMBLING",
+    "PERSONAL",
+}
 MONEY_PATTERN = re.compile(r"(?:0|[1-9][0-9]*)\.[0-9]{2}\Z")
 
 
@@ -35,7 +44,7 @@ def rule(code: str, state: str, evidence: str) -> dict[str, str]:
 
 
 def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
-    """Calcula R01, R02, R05 y R07 sin consultar etiquetas."""
+    """Calcula R01-R07 aplicables sin consultar etiquetas."""
     if "label" in expense or "relationship" in expense:
         raise ValueError("El motor solo acepta datos de entrada")
 
@@ -46,6 +55,7 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
     details = expense["input"]
     receipt_state = details["receipt_state"]
     category = expense["category_hint"]
+    context = details["category_context"]
     results = []
 
     if receipt_state == "MISSING":
@@ -66,7 +76,7 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
         ))
 
     if category == "MEALS":
-        attendees = details["category_context"].get("attendee_count")
+        attendees = context.get("attendee_count")
         if type(attendees) is not int or attendees < 1:
             results.append(rule(
                 "R02", "PENDING", "attendee_count=MISSING",
@@ -86,6 +96,25 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
             f"amount_mxn={amount:.2f};limit_mxn={limit:.2f}",
         ))
 
+    if "prohibited_item" in context:
+        prohibited_item = context["prohibited_item"]
+        if prohibited_item is None:
+            normalized_item = "NONE"
+        elif isinstance(prohibited_item, str):
+            normalized_item = prohibited_item.strip().upper()
+        else:
+            raise ValueError("prohibited_item debe ser texto o null")
+
+        if normalized_item == "NONE":
+            results.append(rule("R03", "PASS", "prohibited_item=NONE"))
+        elif normalized_item in PROHIBITED_ITEMS:
+            results.append(rule(
+                "R03", "VIOLATION",
+                f"prohibited_item={normalized_item}",
+            ))
+        else:
+            raise ValueError("prohibited_item no reconocido")
+
     if receipt_state == "PRESENT_READABLE":
         receipt_total = details.get("receipt_total_mxn")
         if receipt_total is not None:
@@ -99,6 +128,36 @@ def evaluate_core_rules(expense: dict[str, Any]) -> list[dict[str, str]]:
                 "R05", state,
                 f"difference_mxn={difference:.2f};tolerance_mxn=1.00",
             ))
+
+    submitted_at = details.get("submitted_at")
+    expense_date_value = expense.get("expense_date")
+    if not isinstance(submitted_at, str):
+        raise ValueError("submitted_at debe ser texto ISO 8601")
+    if not isinstance(expense_date_value, str):
+        raise ValueError("expense_date debe ser texto ISO 8601")
+
+    try:
+        submitted_date = datetime.fromisoformat(
+            submitted_at.replace("Z", "+00:00")
+        ).date()
+        expense_date = date.fromisoformat(expense_date_value)
+    except ValueError as error:
+        raise ValueError("fechas inválidas") from error
+
+    expense_age_days = (submitted_date - expense_date).days
+    if expense_age_days < 0:
+        raise ValueError("expense_date no puede ser futura")
+
+    age_state = (
+        "PASS"
+        if expense_age_days <= MAX_EXPENSE_AGE_DAYS
+        else "VIOLATION"
+    )
+    results.append(rule(
+        "R06", age_state,
+        f"expense_age_days={expense_age_days};"
+        f"limit_days={MAX_EXPENSE_AGE_DAYS}",
+    ))
 
     if amount >= HUMAN_REVIEW_THRESHOLD:
         results.append(rule(
