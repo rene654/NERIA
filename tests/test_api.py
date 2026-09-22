@@ -1,7 +1,12 @@
-"""Pruebas de integración iniciales para la API de NERIA."""
+"""Pruebas de integración de contratos REST de NERIA."""
+
 import unittest
+
 from httpx import ASGITransport, AsyncClient
+
 from api.main import app
+
+
 def compliant_expense() -> dict:
     return {
         "organization_profile_key":
@@ -26,7 +31,10 @@ def compliant_expense() -> dict:
         },
         "history": [],
     }
+
+
 class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
+
     async def request(
         self,
         method: str,
@@ -34,6 +42,7 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
         **kwargs,
     ):
         transport = ASGITransport(app=app)
+
         async with AsyncClient(
             transport=transport,
             base_url="http://test",
@@ -43,12 +52,15 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
                 path,
                 **kwargs,
             )
+
     async def test_health(self) -> None:
         response = await self.request(
             "GET",
             "/health",
         )
+
         self.assertEqual(response.status_code, 200)
+
         self.assertEqual(
             response.json(),
             {
@@ -57,6 +69,7 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
                 "phase": "4",
             },
         )
+
     async def test_evaluate_compliant_expense(
         self,
     ) -> None:
@@ -65,8 +78,11 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             "/v1/expenses/evaluate",
             json=compliant_expense(),
         )
+
         self.assertEqual(response.status_code, 200)
+
         body = response.json()
+
         self.assertEqual(
             body["compliance"],
             "COMPLIANT",
@@ -86,33 +102,149 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             body["permitted_actions"],
             ["RECORD_SCREENING_RESULT"],
         )
+
     async def test_rejects_benchmark_label_contamination(
         self,
     ) -> None:
         payload = compliant_expense()
+
         payload["label"] = {
             "expected_compliance": "COMPLIANT"
+        }
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        body = response.json()
+
+        self.assertEqual(
+            body["error"]["code"],
+            "REQUEST_VALIDATION_ERROR",
+        )
+
+    async def test_rejects_unknown_context_field(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+
+        payload["input"]["category_context"] = {
+            "secret_answer": "COMPLIANT"
+        }
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        self.assertEqual(
+            response.json()["error"]["code"],
+            "REQUEST_VALIDATION_ERROR",
+        )
+
+    async def test_rejects_invalid_money_format(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+        payload["amount_mxn"] = "900"
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        self.assertEqual(
+            response.json()["error"]["code"],
+            "REQUEST_VALIDATION_ERROR",
+        )
+
+    async def test_domain_error_has_stable_shape(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+        payload["currency"] = "USD"
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        body = response.json()
+
+        self.assertEqual(
+            body["error"]["code"],
+            "DOMAIN_VALIDATION_ERROR",
+        )
+
+        self.assertEqual(
+            body["error"]["details"][0]["error_type"],
+            "domain_error",
+        )
+
+    async def test_preserves_explicit_null_semantics(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+        payload["category_hint"] = "MEALS"
+        payload["amount_mxn"] = "400.00"
+        payload["input"]["receipt_total_mxn"] = "400.00"
+        payload["input"]["category_context"] = {
+            "attendee_count": 1,
+            "prohibited_item": None,
         }
         response = await self.request(
             "POST",
             "/v1/expenses/evaluate",
             json=payload,
         )
-        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        rules = {
+            item["rule_code"]: item["state"]
+            for item in response.json()["rules"]
+        }
+        self.assertEqual(
+            rules["R03"],
+            "PASS",
+        )
+        self.assertEqual(
+            rules["R09"],
+            "PASS",
+        )
     async def test_preserves_financial_authority_boundary(
         self,
     ) -> None:
         payload = compliant_expense()
+
         payload["input"]["category_context"] = {
             "requested_action": "APPROVE_PAYMENT"
         }
+
         response = await self.request(
             "POST",
             "/v1/expenses/evaluate",
             json=payload,
         )
+
         self.assertEqual(response.status_code, 200)
+
         body = response.json()
+
         self.assertEqual(
             body["compliance"],
             "UNDETERMINED",
@@ -133,5 +265,49 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             body["rules"][-1]["state"],
             "ACTION_DENIED",
         )
+
+    async def test_openapi_documents_public_contract(
+        self,
+    ) -> None:
+        response = await self.request(
+            "GET",
+            "/openapi.json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        schema = response.json()
+
+        self.assertIn(
+            "/health",
+            schema["paths"],
+        )
+
+        self.assertIn(
+            "/v1/expenses/evaluate",
+            schema["paths"],
+        )
+
+        request_schema = (
+            schema["components"]["schemas"]
+            ["ExpenseEvaluationRequest"]
+        )
+
+        self.assertNotIn(
+            "label",
+            request_schema["properties"],
+        )
+
+        self.assertNotIn(
+            "relationship",
+            request_schema["properties"],
+        )
+
+        self.assertEqual(
+            request_schema["additionalProperties"],
+            False,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

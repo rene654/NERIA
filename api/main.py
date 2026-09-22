@@ -1,19 +1,42 @@
 """REST API de NERIA."""
-from fastapi import FastAPI, HTTPException
+
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+
 from api.engine_adapter import evaluate
+from api.errors import (
+    DomainValidationError,
+    domain_validation_handler,
+    request_validation_handler,
+)
 from api.schemas import (
+    ErrorResponse,
     ExpenseEvaluationRequest,
     ExpenseEvaluationResponse,
     HealthResponse,
 )
+
+
 app = FastAPI(
     title="NERIA API",
     description=(
         "Auditable Expense Intelligence & Compliance API. "
         "Provides decision intelligence without financial authority."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
+
+app.add_exception_handler(
+    RequestValidationError,
+    request_validation_handler,
+)
+
+app.add_exception_handler(
+    DomainValidationError,
+    domain_validation_handler,
+)
+
+
 @app.get(
     "/health",
     response_model=HealthResponse,
@@ -21,14 +44,25 @@ app = FastAPI(
 )
 def health() -> HealthResponse:
     """Confirma que el servicio API está disponible."""
+
     return HealthResponse(
         status="ok",
         service="neria-api",
         phase="4",
     )
+
+
 @app.post(
     "/v1/expenses/evaluate",
     response_model=ExpenseEvaluationResponse,
+    responses={
+        422: {
+            "model": ErrorResponse,
+            "description": (
+                "Request contract or domain validation error."
+            ),
+        }
+    },
     tags=["expenses"],
 )
 def evaluate_expense_endpoint(
@@ -36,17 +70,25 @@ def evaluate_expense_endpoint(
 ) -> ExpenseEvaluationResponse:
     """
     Evalúa un gasto mediante el motor determinístico.
-    Este endpoint no aprueba pagos ni libera reembolsos.
+
+    No aprueba pagos ni libera reembolsos.
     """
+
     try:
         result = evaluate(
-            request.model_dump()
+            request.model_dump(
+                exclude_unset=True
+            )
         )
-    except (KeyError, TypeError, ValueError) as error:
-        raise HTTPException(
-            status_code=422,
-            detail=str(error),
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+    ) as error:
+        raise DomainValidationError(
+            str(error)
         ) from error
+
     return ExpenseEvaluationResponse(
         **result
     )
