@@ -127,9 +127,6 @@ class ExpenseEvaluationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    organization_profile_key: str = Field(
-        min_length=1
-    )
     jurisdiction_country: str = Field(
         pattern=COUNTRY_PATTERN
     )

@@ -1,5 +1,7 @@
 """Pruebas de integración de contratos REST de NERIA."""
 
+import json
+import os
 import unittest
 
 from httpx import ASGITransport, AsyncClient
@@ -9,8 +11,6 @@ from api.main import app
 
 def compliant_expense() -> dict:
     return {
-        "organization_profile_key":
-            "ORG-PROFILE-MEDIUM-MX-001",
         "jurisdiction_country": "MX",
         "employee_key": "EMP-API-001",
         "merchant_key": "MERCHANT-API-001",
@@ -35,13 +35,58 @@ def compliant_expense() -> dict:
 
 class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
 
+    TEST_API_KEY = (
+        "neria-test-api-key-000000000001"
+    )
+    TEST_ORGANIZATION_ID = (
+        "11111111-1111-4111-8111-111111111111"
+    )
+
+    def setUp(self) -> None:
+        self.previous_api_keys = os.environ.get(
+            "NERIA_API_KEYS_JSON"
+        )
+
+        os.environ["NERIA_API_KEYS_JSON"] = json.dumps(
+            {
+                self.TEST_API_KEY: {
+                    "organization_id":
+                        self.TEST_ORGANIZATION_ID,
+                    "role": "ANALYST",
+                }
+            }
+        )
+
+    def tearDown(self) -> None:
+        if self.previous_api_keys is None:
+            os.environ.pop(
+                "NERIA_API_KEYS_JSON",
+                None,
+            )
+        else:
+            os.environ[
+                "NERIA_API_KEYS_JSON"
+            ] = self.previous_api_keys
+
     async def request(
         self,
         method: str,
         path: str,
+        *,
+        authenticated: bool = True,
         **kwargs,
     ):
         transport = ASGITransport(app=app)
+
+        headers = dict(
+            kwargs.pop("headers", {})
+        )
+
+        if authenticated:
+            headers.setdefault(
+                "Authorization",
+                f"Bearer {self.TEST_API_KEY}",
+            )
 
         async with AsyncClient(
             transport=transport,
@@ -50,6 +95,7 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             return await client.request(
                 method,
                 path,
+                headers=headers,
                 **kwargs,
             )
 
@@ -342,6 +388,109 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             response.json()["error"]["request_id"],
             expected,
         )
+    async def test_health_remains_public(
+        self,
+    ) -> None:
+        response = await self.request(
+            "GET",
+            "/health",
+            authenticated=False,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+    async def test_evaluate_requires_authentication(
+        self,
+    ) -> None:
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            authenticated=False,
+            json=compliant_expense(),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            401,
+        )
+
+        self.assertEqual(
+            response.json()["error"]["code"],
+            "AUTHENTICATION_REQUIRED",
+        )
+
+    async def test_evaluate_rejects_invalid_token(
+        self,
+    ) -> None:
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            authenticated=False,
+            headers={
+                "Authorization":
+                    "Bearer invalid-token-value-000000000"
+            },
+            json=compliant_expense(),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            401,
+        )
+
+        self.assertEqual(
+            response.json()["error"]["code"],
+            "AUTHENTICATION_REQUIRED",
+        )
+
+    async def test_client_cannot_select_organization(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+
+        payload["organization_id"] = (
+            "22222222-2222-4222-8222-222222222222"
+        )
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            422,
+        )
+
+        self.assertEqual(
+            response.json()["error"]["code"],
+            "REQUEST_VALIDATION_ERROR",
+        )
+
+    async def test_client_cannot_send_organization_profile(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+
+        payload["organization_profile_key"] = (
+            "ORG-CLIENT-CONTROLLED"
+        )
+
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            json=payload,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            422,
+        )
+
     async def test_openapi_documents_public_contract(
         self,
     ) -> None:
@@ -385,7 +534,27 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             schema["info"]["version"],
-            "0.3.0",
+            "0.4.0",
+        )
+
+        security_schemes = (
+            schema["components"]
+            ["securitySchemes"]
+        )
+
+        self.assertIn(
+            "NeriaBearerAuth",
+            security_schemes,
+        )
+
+        evaluate_operation = (
+            schema["paths"]
+            ["/v1/expenses/evaluate"]
+            ["post"]
+        )
+
+        self.assertTrue(
+            evaluate_operation["security"]
         )
         evaluate_responses = (
             schema["paths"]
