@@ -213,6 +213,7 @@ class ErrorDetail(BaseModel):
 
 
 class ApiError(BaseModel):
+    request_id: str
     code: str
     message: str
     details: list[ErrorDetail]

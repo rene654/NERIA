@@ -2,13 +2,13 @@
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from api.trace import get_request_id
 class DomainValidationError(Exception):
     """Error esperado producido por el dominio determinístico."""
 async def request_validation_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
-    del request
     details = []
     for item in exc.errors():
         details.append(
@@ -22,7 +22,10 @@ async def request_validation_handler(
         status_code=422,
         content={
             "error": {
-                "code": "REQUEST_VALIDATION_ERROR",
+                "request_id":
+                    get_request_id(request),
+                "code":
+                    "REQUEST_VALIDATION_ERROR",
                 "message": (
                     "The request does not match "
                     "the NERIA API contract."
@@ -35,12 +38,14 @@ async def domain_validation_handler(
     request: Request,
     exc: DomainValidationError,
 ) -> JSONResponse:
-    del request
     return JSONResponse(
         status_code=422,
         content={
             "error": {
-                "code": "DOMAIN_VALIDATION_ERROR",
+                "request_id":
+                    get_request_id(request),
+                "code":
+                    "DOMAIN_VALIDATION_ERROR",
                 "message": (
                     "The expense could not be evaluated "
                     "under the current deterministic policy."

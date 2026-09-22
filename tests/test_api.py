@@ -266,6 +266,82 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
             "ACTION_DENIED",
         )
 
+    async def test_generates_request_id(
+        self,
+    ) -> None:
+        response = await self.request(
+            "GET",
+            "/health",
+        )
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        request_id = response.headers.get(
+            "X-Request-ID"
+        )
+        self.assertIsNotNone(request_id)
+        self.assertTrue(request_id)
+    async def test_preserves_valid_client_request_id(
+        self,
+    ) -> None:
+        expected = "client-trace-123"
+        response = await self.request(
+            "GET",
+            "/health",
+            headers={
+                "X-Request-ID": expected,
+            },
+        )
+        self.assertEqual(
+            response.headers["X-Request-ID"],
+            expected,
+        )
+    async def test_replaces_invalid_client_request_id(
+        self,
+    ) -> None:
+        invalid = "bad request id with spaces"
+        response = await self.request(
+            "GET",
+            "/health",
+            headers={
+                "X-Request-ID": invalid,
+            },
+        )
+        actual = response.headers[
+            "X-Request-ID"
+        ]
+        self.assertNotEqual(
+            actual,
+            invalid,
+        )
+        self.assertTrue(actual)
+    async def test_error_correlates_request_id(
+        self,
+    ) -> None:
+        payload = compliant_expense()
+        payload["amount_mxn"] = "900"
+        expected = "client-error-001"
+        response = await self.request(
+            "POST",
+            "/v1/expenses/evaluate",
+            headers={
+                "X-Request-ID": expected,
+            },
+            json=payload,
+        )
+        self.assertEqual(
+            response.status_code,
+            422,
+        )
+        self.assertEqual(
+            response.headers["X-Request-ID"],
+            expected,
+        )
+        self.assertEqual(
+            response.json()["error"]["request_id"],
+            expected,
+        )
     async def test_openapi_documents_public_contract(
         self,
     ) -> None:
@@ -306,6 +382,23 @@ class TestNeriaApi(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             request_schema["additionalProperties"],
             False,
+        )
+        self.assertEqual(
+            schema["info"]["version"],
+            "0.3.0",
+        )
+        evaluate_responses = (
+            schema["paths"]
+            ["/v1/expenses/evaluate"]
+            ["post"]["responses"]
+        )
+        self.assertIn(
+            "X-Request-ID",
+            evaluate_responses["200"]["headers"],
+        )
+        self.assertIn(
+            "X-Request-ID",
+            evaluate_responses["422"]["headers"],
         )
 
 
